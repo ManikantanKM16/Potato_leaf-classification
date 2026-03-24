@@ -1,0 +1,37 @@
+======================================================
+ LEAF-CLASSIFICATION - HOW TO RUN THE PROJECT SCRIPTS
+======================================================
+
+Whenever you close your computer and want to start 
+this project again, you need exactly TWO terminal 
+windows running side-by-side.
+
+------------------------------------------------------
+TERMINAL 1: START THE BACKEND (FastAPI / AI Model)
+------------------------------------------------------
+1. Open a new terminal window.
+2. Tell it to switch into the backend folder:
+   cd C:\Users\91990\.gemini\antigravity\scratch\leaf-classification\backend
+3. Run the AI server engine:
+   py -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   
+*(Leave this terminal window completely open and running!)*
+
+------------------------------------------------------
+TERMINAL 2: START THE FRONTEND (React / Vite UI)
+------------------------------------------------------
+1. Open a BRAND NEW (second) terminal window.
+2. Tell it to switch into the frontend folder:
+   cd C:\Users\91990\.gemini\antigravity\scratch\leaf-classification\frontend
+3. Run the User Interface (the UI):
+   npm run dev
+
+*(Leave this terminal window running as well!)*
+
+======================================================
+VIEWING THE APP IN YOUR BROWSER
+======================================================
+Once those two terminals are running:
+1. Open your web browser (Chrome, Edge, Safari, etc.)
+2. Go to the User Interface: http://localhost:5173
+3. (Optional) To view your AI's backend server documentation, go to: http://localhost:8000/docs
