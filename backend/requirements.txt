@@ -4,3 +4,8 @@ python-multipart
 tensorflow
 Pillow
 numpy
+sqlalchemy
+passlib[bcrypt]
+python-jose[cryptography]
+httpx
+python-dotenv

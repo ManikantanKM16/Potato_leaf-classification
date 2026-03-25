@@ -4,14 +4,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   UploadCloud, CheckCircle2, AlertCircle, Sparkles, X, Leaf, ShieldCheck, 
   ChevronRight, Activity, AlertTriangle, Globe, Target, Camera, Cpu, Zap, ArrowLeft, Shield, Download, Layers,
-  Database, Code, Terminal, Server, Layout
+  Database, Code, Terminal, Server, Layout, History, LogOut, User
 } from 'lucide-react';
 import axios from 'axios';
+import AuthPage from './AuthPage';
+import HistoryPage from './HistoryPage';
+import LandingPage from './LandingPage';
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // ==========================================
-// 1. NAV BAR
+// 1. NAV BAR  (updated with user + history)
 // ==========================================
-function NavBar({ currentPage = 'intro', onNavigate }) {
+function NavBar({ currentPage = 'intro', onNavigate, user, onLogout }) {
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-nav px-6 py-3.5 flex justify-between items-center transition-all">
       <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onNavigate && onNavigate('intro')}>
@@ -20,15 +27,67 @@ function NavBar({ currentPage = 'intro', onNavigate }) {
         </div>
         <span className="text-xl font-bold tracking-tight text-gray-900">PotatoShield</span>
       </div>
+
       <div className="hidden md:flex items-center bg-gray-100/50 rounded-full px-1 border border-gray-200/50">
         <button onClick={() => onNavigate && onNavigate('intro')} className={`px-5 py-1.5 text-sm font-semibold rounded-full m-1 transition-all ${currentPage === 'intro' || currentPage === 'analyzer' ? 'text-gray-900 bg-white shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Overview</button>
         <button onClick={() => onNavigate && onNavigate('technology')} className={`px-5 py-1.5 text-sm font-semibold rounded-full m-1 transition-all ${currentPage === 'technology' ? 'text-gray-900 bg-white shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Technology</button>
-        <button className="px-5 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">PWA App</button>
+        {user && (
+          <button onClick={() => onNavigate && onNavigate('history')} className={`px-5 py-1.5 text-sm font-semibold rounded-full m-1 transition-all flex items-center gap-1.5 ${currentPage === 'history' ? 'text-gray-900 bg-white shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>
+            <History className="w-3.5 h-3.5" /> History
+          </button>
+        )}
       </div>
-      <div>
-        <button className="w-10 h-10 flex justify-center items-center bg-gray-100/80 rounded-full md:hidden hover:bg-gray-200 transition-colors">
-          <Layers className="w-5 h-5 text-gray-600"/>
-        </button>
+
+      {/* User area */}
+      <div className="relative">
+        {user ? (
+          <div>
+            <button
+              onClick={() => setShowUserMenu(v => !v)}
+              className="flex items-center gap-2.5 bg-gray-100/80 hover:bg-gray-100 rounded-full pl-2 pr-4 py-1.5 border border-gray-200/50 transition-all"
+            >
+              {user.avatar_url ? (
+                <img src={user.avatar_url} alt={user.username} className="w-7 h-7 rounded-full object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <User className="w-4 h-4 text-emerald-600" />
+                </div>
+              )}
+              <span className="text-sm font-semibold text-gray-800 hidden sm:block max-w-[100px] truncate">{user.username}</span>
+            </button>
+
+            <AnimatePresence>
+              {showUserMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100 p-2 z-50"
+                >
+                  <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                    <p className="text-xs font-bold text-gray-900 truncate">{user.username}</p>
+                    {user.email && <p className="text-xs text-gray-400 truncate">{user.email}</p>}
+                  </div>
+                  <button onClick={() => { onNavigate('history'); setShowUserMenu(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+                    <History className="w-4 h-4 text-gray-400" /> My Analysis History
+                  </button>
+                  <button onClick={() => { onLogout(); setShowUserMenu(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <div>
+            <button className="w-10 h-10 flex justify-center items-center bg-gray-100/80 rounded-full md:hidden hover:bg-gray-200 transition-colors">
+              <Layers className="w-5 h-5 text-gray-600"/>
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   );
@@ -37,7 +96,7 @@ function NavBar({ currentPage = 'intro', onNavigate }) {
 // ==========================================
 // 2. INTRO / LANDING PAGE COMPONENT
 // ==========================================
-function IntroPage({ onStart, currentPage, onNavigate }) {
+function IntroPage({ onStart, currentPage, onNavigate, user, onLogout }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
   useEffect(() => {
@@ -61,7 +120,7 @@ function IntroPage({ onStart, currentPage, onNavigate }) {
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-32 pb-24 px-6 relative w-full">
-      <NavBar currentPage={currentPage} onNavigate={onNavigate} />
+      <NavBar currentPage={currentPage} onNavigate={onNavigate} user={user} onLogout={onLogout} />
       
       <div className="w-full max-w-5xl z-10 flex flex-col items-center">
         
@@ -131,15 +190,9 @@ function IntroPage({ onStart, currentPage, onNavigate }) {
                 </p>
               </div>
               <div className="mt-8 flex gap-3">
-                 <div className="flex-1 bg-gray-50/50 py-4 rounded-[1rem] flex items-center justify-center border border-gray-100">
-                    <span className="font-bold text-gray-900 tracking-tight text-sm">iOS</span>
-                 </div>
-                 <div className="flex-1 bg-gray-50/50 py-4 rounded-[1rem] flex items-center justify-center border border-gray-100">
-                    <span className="font-bold text-gray-900 tracking-tight text-sm">Android</span>
-                 </div>
-                 <div className="flex-1 bg-gray-50/50 py-4 rounded-[1rem] flex items-center justify-center border border-gray-100">
-                    <span className="font-bold text-gray-900 tracking-tight text-sm">Windows</span>
-                 </div>
+                 <div className="flex-1 bg-gray-50/50 py-4 rounded-[1rem] flex items-center justify-center border border-gray-100"><span className="font-bold text-gray-900 tracking-tight text-sm">iOS</span></div>
+                 <div className="flex-1 bg-gray-50/50 py-4 rounded-[1rem] flex items-center justify-center border border-gray-100"><span className="font-bold text-gray-900 tracking-tight text-sm">Android</span></div>
+                 <div className="flex-1 bg-gray-50/50 py-4 rounded-[1rem] flex items-center justify-center border border-gray-100"><span className="font-bold text-gray-900 tracking-tight text-sm">Windows</span></div>
               </div>
             </div>
 
@@ -172,10 +225,10 @@ function IntroPage({ onStart, currentPage, onNavigate }) {
 // ==========================================
 // 3. SECURE ANALYZER COMPONENT
 // ==========================================
-function AnalyzerComponent({ onBack, currentPage, onNavigate }) {
+function AnalyzerComponent({ onBack, currentPage, onNavigate, user, onLogout }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [status, setStatus] = useState('IDLE'); // IDLE, SCANNING, COMPLETE, ERROR
+  const [status, setStatus] = useState('IDLE');
   const [result, setResult] = useState(null);
 
   const onDrop = useCallback((acceptedFiles) => {
@@ -200,16 +253,16 @@ function AnalyzerComponent({ onBack, currentPage, onNavigate }) {
   const startAnalysis = async () => {
     if (!file) return;
     setStatus('SCANNING');
-    
-    // Simulating iOS/Native camera feel delay
     await new Promise(r => setTimeout(r, 600));
 
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await axios.post('http://localhost:8000/predict', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const token = localStorage.getItem('ps_token');
+      const headers = { 'Content-Type': 'multipart/form-data' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await axios.post(`${API}/predict`, formData, { headers });
       
       if (response.data && response.data.class) {
          setResult(response.data);
@@ -224,19 +277,19 @@ function AnalyzerComponent({ onBack, currentPage, onNavigate }) {
   };
 
   const isHealthy = result?.class?.includes("Healthy");
-  const isEarly = result?.class?.includes("Early_blight");
+  const isEarly   = result?.class?.includes("Early_blight");
   
   const getOutcomeColors = () => {
     if (status === 'ERROR') return 'from-rose-50 to-white border-rose-100 text-rose-600';
     if (!result) return 'from-gray-50 to-white border-gray-100 text-gray-600';
     if (isHealthy) return 'from-emerald-50 to-white border-emerald-100 text-emerald-600';
-    if (isEarly) return 'from-amber-50 to-white border-amber-100 text-amber-600';
+    if (isEarly)   return 'from-amber-50 to-white border-amber-100 text-amber-600';
     return 'from-rose-50 to-white border-rose-100 text-rose-600';
   };
 
   return (
     <div className="min-h-screen pt-28 pb-12 px-4 sm:px-6 flex flex-col items-center relative w-full">
-      <NavBar currentPage={currentPage} onNavigate={onNavigate} />
+      <NavBar currentPage={currentPage} onNavigate={onNavigate} user={user} onLogout={onLogout} />
 
       <div className="w-full max-w-4xl z-10">
         
@@ -245,8 +298,15 @@ function AnalyzerComponent({ onBack, currentPage, onNavigate }) {
           <button onClick={onBack} className="flex items-center text-gray-500 hover:text-gray-900 transition-colors font-medium">
             <ArrowLeft className="w-5 h-5 mr-2" /> Back
           </button>
-          <div className="px-5 py-2 bg-gray-100/80 backdrop-blur text-gray-600 rounded-full text-xs font-bold tracking-widest uppercase border border-gray-200">
-             Live Diagnostic
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full text-xs font-semibold text-emerald-700">
+                <Shield className="w-3.5 h-3.5" /> Results auto-saved
+              </div>
+            )}
+            <div className="px-5 py-2 bg-gray-100/80 backdrop-blur text-gray-600 rounded-full text-xs font-bold tracking-widest uppercase border border-gray-200">
+               Live Diagnostic
+            </div>
           </div>
         </div>
 
@@ -279,14 +339,12 @@ function AnalyzerComponent({ onBack, currentPage, onNavigate }) {
                     className={`w-full h-full object-cover transition-all duration-1000 ${status === 'SCANNING' ? 'scale-110 filter blur-xl brightness-[0.3]' : 'brightness-100'}`}
                   />
                   
-                  {/* Subject Controls overlay */}
                   <div className="absolute top-4 right-4 flex space-x-2 z-20">
                     <button onClick={clearSession} disabled={status === 'SCANNING'} className="w-10 h-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white/90 hover:text-white hover:bg-black/50 transition-all disabled:opacity-0 shadow-sm border border-white/10">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
 
-                  {/* Scanning Overlay */}
                   {status === 'SCANNING' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-10 flex flex-col items-center justify-center">
                       <div className="w-16 h-16 rounded-full border-[3px] border-white/20 border-t-white animate-spin mb-6"></div>
@@ -373,6 +431,13 @@ function AnalyzerComponent({ onBack, currentPage, onNavigate }) {
                             <span className="opacity-70 leading-relaxed block">Maintain standard regimen. No biological intervention required.</span>
                           </div>
                         )}
+
+                        {user && (
+                          <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+                            <History className="w-3.5 h-3.5" />
+                            Saved to your history
+                          </div>
+                        )}
                       </motion.div>
                     )}
 
@@ -391,7 +456,7 @@ function AnalyzerComponent({ onBack, currentPage, onNavigate }) {
 // ==========================================
 // 4. TECHNOLOGY PAGE COMPONENT
 // ==========================================
-function TechnologyPage({ currentPage, onNavigate }) {
+function TechnologyPage({ currentPage, onNavigate, user, onLogout }) {
   const techStack = [
     {
       title: "Frontend Experience",
@@ -425,9 +490,8 @@ function TechnologyPage({ currentPage, onNavigate }) {
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-6 flex flex-col items-center relative w-full overflow-hidden">
-      <NavBar currentPage={currentPage} onNavigate={onNavigate} />
+      <NavBar currentPage={currentPage} onNavigate={onNavigate} user={user} onLogout={onLogout} />
       
-      {/* Background glow for aesthetics */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-tr from-sky-400/10 to-emerald-400/10 rounded-full blur-[120px] -z-10 mix-blend-multiply"></div>
 
       <div className="w-full max-w-5xl z-10 flex flex-col items-center">
@@ -457,9 +521,7 @@ function TechnologyPage({ currentPage, onNavigate }) {
               </div>
               <p className="relative z-10 text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{tech.title}</p>
               <h3 className="relative z-10 text-2xl font-bold text-gray-900 mb-4 tracking-tight">{tech.name}</h3>
-              <p className="relative z-10 text-gray-500 font-medium leading-relaxed">
-                {tech.desc}
-              </p>
+              <p className="relative z-10 text-gray-500 font-medium leading-relaxed">{tech.desc}</p>
             </div>
           ))}
         </motion.div>
@@ -479,27 +541,92 @@ function TechnologyPage({ currentPage, onNavigate }) {
 // 5. MAIN ROUTING COMPONENT
 // ==========================================
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('intro'); // 'intro', 'analyzer', 'technology'
+  const [currentPage, setCurrentPage] = useState('loading');
+  const [user, setUser] = useState(null);
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const token    = localStorage.getItem('ps_token');
+    const username = localStorage.getItem('ps_username');
+    const email    = localStorage.getItem('ps_email');
+    const avatar   = localStorage.getItem('ps_avatar');
+    if (token && username) {
+      setUser({ token, username, email, avatar_url: avatar });
+      setCurrentPage('intro');
+    } else {
+      setCurrentPage('landing');
+    }
+  }, []);
+
+  const handleAuth = (userData) => {
+    setUser(userData);
+    setCurrentPage('intro');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('ps_token');
+    localStorage.removeItem('ps_username');
+    localStorage.removeItem('ps_email');
+    localStorage.removeItem('ps_avatar');
+    setUser(null);
+    setCurrentPage('auth');
+  };
+
+  const navigateTo = (page) => {
+    // Guard protected pages
+    if ((page === 'analyzer' || page === 'history') && !user) {
+      setCurrentPage('auth');
+      return;
+    }
+    setCurrentPage(page);
+  };
+
+  if (currentPage === 'loading') return null;
+
+  const navProps = { user, onLogout: handleLogout };
+  const nav = navigateTo;
 
   return (
     <>
       <div className="ambient-bg"></div>
       <AnimatePresence mode="wait">
-        {currentPage === 'intro' && (
-          <motion.div key="intro" exit={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }} initial={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }} animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
-            <IntroPage onStart={() => setCurrentPage('analyzer')} currentPage={currentPage} onNavigate={setCurrentPage} />
+
+        {(!user && currentPage === 'landing') && (
+          <motion.div key="landing" exit={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+            <LandingPage onGetStarted={() => setCurrentPage('auth')} />
           </motion.div>
         )}
+
+        {(!user && currentPage === 'auth') && (
+          <motion.div key="auth" exit={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }} initial={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }} animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }} transition={{ duration: 0.4 }}>
+            <AuthPage onAuth={handleAuth} />
+          </motion.div>
+        )}
+
+        {(currentPage === 'intro') && (
+          <motion.div key="intro" exit={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }} initial={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }} animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
+            <IntroPage onStart={() => nav(user ? 'analyzer' : 'auth')} currentPage={currentPage} onNavigate={nav} {...navProps} />
+          </motion.div>
+        )}
+
         {currentPage === 'analyzer' && (
           <motion.div key="analyzer" initial={{ opacity: 0, filter: "blur(10px)", scale: 1.02 }} animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }} exit={{ opacity: 0, filter: "blur(10px)", scale: 1.02 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
-            <AnalyzerComponent onBack={() => setCurrentPage('intro')} currentPage={currentPage} onNavigate={setCurrentPage} />
+            <AnalyzerComponent onBack={() => nav('intro')} currentPage={currentPage} onNavigate={nav} {...navProps} />
           </motion.div>
         )}
+
         {currentPage === 'technology' && (
           <motion.div key="technology" initial={{ opacity: 0, filter: "blur(10px)", y: 20 }} animate={{ opacity: 1, filter: "blur(0px)", y: 0 }} exit={{ opacity: 0, filter: "blur(10px)", y: 20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
-            <TechnologyPage currentPage={currentPage} onNavigate={setCurrentPage} />
+            <TechnologyPage currentPage={currentPage} onNavigate={nav} {...navProps} />
           </motion.div>
         )}
+
+        {currentPage === 'history' && user && (
+          <motion.div key="history" initial={{ opacity: 0, filter: "blur(10px)", y: 20 }} animate={{ opacity: 1, filter: "blur(0px)", y: 0 }} exit={{ opacity: 0, filter: "blur(10px)", y: 20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
+            <HistoryPage user={user} onBack={() => nav('intro')} currentPage={currentPage} onNavigate={nav} />
+          </motion.div>
+        )}
+
       </AnimatePresence>
     </>
   );

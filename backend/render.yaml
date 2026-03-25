@@ -1,0 +1,22 @@
+services:
+  # ── FastAPI Backend ───────────────────────────────────────────
+  - type: web
+    name: potatoshield-api
+    runtime: python
+    region: singapore    # closest to India
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true          # Render auto-generates a secure secret
+      - key: GOOGLE_CLIENT_ID
+        value: 40176885150-ptp34v8v2g57t65bipj4r82qh7jlmq6b.apps.googleusercontent.com
+      - key: GOOGLE_CLIENT_SECRET
+        value: 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
+      - key: FRONTEND_URL
+        value: https://potatoshield.vercel.app
+      - key: BACKEND_URL
+        value: https://potatoshield-api.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://potatoshield.vercel.app

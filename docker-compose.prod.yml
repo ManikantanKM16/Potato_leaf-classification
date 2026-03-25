@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # ── FastAPI Backend ───────────────────────────────────────────
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    # NOT exposed publicly — only accessible inside the Docker network
+    # Nginx proxies /api/* to http://backend:8000
+    expose:
+      - "8000"
+    volumes:
+      - ./saved_models:/saved_models     # ML model files
+      - ./backend/potatoshield.db:/app/potatoshield.db   # SQLite database persistence
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=https://potatoshield.com
+      - ALLOWED_ORIGINS=https://potatoshield.com
+    env_file:
+      - backend/.env.production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── Nginx (Frontend + Reverse Proxy + SSL) ────────────────────
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Let's Encrypt certificates (created by Certbot on the host)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Certbot ACME challenge webroot
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      - backend
+
+  # ── Certbot (auto-renew SSL certificates) ─────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
+    # Renew check every 12 hours (Certbot only renews if cert expires in <30 days)
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
