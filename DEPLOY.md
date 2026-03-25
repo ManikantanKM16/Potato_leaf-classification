@@ -55,8 +55,8 @@ git push -u origin main
    | Key | Value |
    |-----|-------|
    | `SECRET_KEY` | Click "Generate" (Render will make a secure one) |
-   | `GOOGLE_CLIENT_ID` | `40176885150-ptp34v8v2g57t65bipj4r82qh7jlmq6b.apps.googleusercontent.com` |
-   | `GOOGLE_CLIENT_SECRET` | `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` |
+   | `GOOGLE_CLIENT_ID` | `YOUR_GOOGLE_CLIENT_ID_HERE` |
+   | `GOOGLE_CLIENT_SECRET` | `YOUR_GOOGLE_CLIENT_SECRET_HERE` |
    | `FRONTEND_URL` | `https://potatoshield.vercel.app` |
    | `BACKEND_URL` | `https://potatoshield-api.onrender.com` |
    | `ALLOWED_ORIGINS` | `https://potatoshield.vercel.app` |
