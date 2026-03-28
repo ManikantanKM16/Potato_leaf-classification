@@ -121,15 +121,18 @@ class TokenResponse(BaseModel):
 
 @app.post("/register", response_model=TokenResponse)
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
+    # Convert empty string to None to avoid unique constraint issues
+    req_email = req.email.strip() if req.email and req.email.strip() else None
+
     # Security: check username and email uniqueness
     if db.query(User).filter(User.username == req.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
-    if req.email and db.query(User).filter(User.email == req.email).first():
+    if req_email and db.query(User).filter(User.email == req_email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
         username=req.username,
-        email=req.email,
+        email=req_email,
         hashed_password=hash_password(req.password),
     )
     db.add(user)
